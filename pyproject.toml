@@ -1,0 +1,48 @@
+[project]
+name = "fast-zero"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Enzo Koji",email = "10403411@mackenzista.com.br"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi (>=0.124.4,<0.125.0)",
+    "uvicorn[standard] (>=0.38.0,<0.39.0)"
+]
+
+[tool.poetry]
+packages = [{include = "fast_zero", from = "src"}]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = '-p no:warnings'
+
+[tool.ruff]
+line-length = 79
+extend-exclude = ['migrations']
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.taskipy.tasks]
+run = 'poetry run uvicorn fast_zero.app:app'
+test = 'poetry run pytest -v --cov=fast_zero'
+lint = 'poetry run ruff check .'
+format = 'poetry run ruff check . --fix'
+post_test = 'poetry run coverage html'
+
+[dependency-groups]
+dev = [
+    "ruff (>=0.14.9,<0.15.0)",
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "taskipy (>=1.14.1,<2.0.0)"
+]

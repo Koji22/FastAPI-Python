@@ -57,6 +57,7 @@ def delete_user(user_id: int):
 
     return {'message': 'User deleted'}
 
+
 @app.get('/users/{user_id}', response_model=UserPublic)
 def get_user(user_id: int):
     if user_id < 1 or user_id > len(database):

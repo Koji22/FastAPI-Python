@@ -1,7 +1,11 @@
 from http import HTTPStatus
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy import or_, select
+from sqlalchemy.orm import Session
 
+from fast_zero.database import get_session
+from fast_zero.models import User
 from fast_zero.schemas import Message, UserDB, UserList, UserPublic, UserSchema
 
 app = FastAPI()
@@ -15,21 +19,47 @@ def read_root():
 
 
 @app.post("/users/", status_code=HTTPStatus.CREATED, response_model=UserPublic)
-def create_user(user: UserSchema):
+def create_user(user: UserSchema, session=Depends(get_session)):
 
-    user_with_id = UserDB(
-        id=len(database) + 1,
-        **user.model_dump()
+    db_user = session.scalar(
+        select(User).where(
+            or_(
+                User.username == user.username,
+                User.email == user.email
+            )
+        )
     )
+    if db_user:
+        if db_user.username == user.username:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail='Username already exists'
+            )
+        elif db_user.email == user.email:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail='Email already exists'
+            )
+    db_user = User(
+        username=user.username, password=user.password, email=user.email
+    )
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
 
-    database.append(user_with_id)
-
-    return user_with_id
+    return db_user
 
 
 @app.get('/users/', response_model=UserList)
-def read_users():
-    return {'users': database}
+def read_users(
+    limit: int = 10,
+    skip: int = 0,
+    session: Session = Depends(get_session)
+):
+    users = session.scalars(
+        select(User).limit(limit).offset(skip)
+    )
+    return {'users': users}
 
 
 @app.put('/users/{user_id}', response_model=UserPublic)

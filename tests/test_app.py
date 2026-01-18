@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+from fast_zero.schemas import UserPublic
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -35,19 +37,22 @@ def test_create_user(client):
         'email': 'test@test.com',
         'id': 1}
 
-    def test_read_users(client):
-        client.get('/users')
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.json() == {'users': [
-            {
-                'username': 'testusername1',
-                'email': 'test@test1.com',
-                'id': 1,
-            }
-        ]
-        }
+def test_read_users(client, user):
+    
+    client.get('/users')
 
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'users': []
+    }
+
+def test_read_users_with_user(client, user):
+    user_schema = UserPublic.model_validate(user).model_dump()
+    response = client.get('/users')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'users': [user_schema]
+    }
 
 def test_update_user(client):
         response = client.put('/users/1', json={
